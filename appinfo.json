@@ -1,0 +1,18 @@
+{
+    "versionLabel": "1.0",
+    "uuid": "454a7c8e-c10c-450c-9584-d06398af48b2",
+    "appKeys": {},
+    "longName": "C Test using CloudPebble",
+    "versionCode": 1,
+    "capabilities": [
+        ""
+    ],
+    "shortName": "CTest",
+    "companyName": "miloprice",
+    "watchapp": {
+        "watchface": false
+    },
+    "resources": {
+        "media": []
+    }
+}
