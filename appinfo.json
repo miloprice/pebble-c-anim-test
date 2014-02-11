@@ -10,10 +10,25 @@
     "shortName": "CTest",
     "companyName": "miloprice",
     "watchapp": {
-        "watchface": false
+        "watchface": true
     },
     "resources": {
         "media": [
+            {
+                "type": "font",
+                "name": "IMAGINE_42",
+                "file": "fonts/imagine.ttf"
+            },
+            {
+                "type": "png",
+                "name": "FUTURE_ARROW",
+                "file": "images/future1.png"
+            },
+            {
+                "type": "png",
+                "name": "PAST_ARROW",
+                "file": "images/past1.png"
+            },
             {
                 "menuIcon": true,
                 "type": "png",

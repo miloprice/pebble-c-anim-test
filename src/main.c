@@ -4,6 +4,8 @@ Window *window;
 TextLayer *text_layer;
 char buffer[] = "00:00";
 InverterLayer *inv_layer;	//Inverter layer
+GBitmap *future_bitmap, *past_bitmap;
+BitmapLayer *future_layer, *past_layer;
 
 void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 	//Format the buffer string using tick_time as the time source
@@ -15,11 +17,14 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 
 void window_load(Window *window)
 {
-	text_layer = text_layer_create(GRect(0, 53, 132, 168));
+	//Load font
+	ResHandle font_handle = resource_get_handle(RESOURCE_ID_IMAGINE_42);
+	
+	text_layer = text_layer_create(GRect(0, 53, 144, 168));
 	text_layer_set_background_color(text_layer, GColorClear);
 	text_layer_set_text_color(text_layer, GColorBlack);
 	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+	text_layer_set_font(text_layer, fonts_load_custom_font(font_handle));
 	
 	layer_add_child(window_get_root_layer(window), (Layer*) text_layer);
 	
@@ -38,6 +43,21 @@ void window_load(Window *window)
 	
 	//Manually call tick handler when window is loading
 	tick_handler(t, MINUTE_UNIT);
+	
+	//Load bitmaps into GBitmap structures
+	//The ID you chose when uploading is prefixed with 'RESOURCE_ID_'
+	future_bitmap = gbitmap_create_with_resource(RESOURCE_ID_FUTURE_ARROW);
+	past_bitmap = gbitmap_create_with_resource(RESOURCE_ID_PAST_ARROW);
+	 
+	//Create BitmapLayers to show GBitmaps and add to Window
+	//Sample images are 144 x 50 pixels
+	future_layer = bitmap_layer_create(GRect(0, 0, 144, 50));
+	bitmap_layer_set_bitmap(future_layer, future_bitmap);
+	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(future_layer));
+	 
+	past_layer = bitmap_layer_create(GRect(0, 112, 144, 50));
+	bitmap_layer_set_bitmap(past_layer, past_bitmap);
+	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(past_layer));
 }
 
 void window_unload(Window *window)
@@ -64,6 +84,13 @@ void handle_init(void) {
 void handle_deinit(void) {
 	window_destroy(window);
 	tick_timer_service_unsubscribe();
+	//Destroy GBitmaps
+	gbitmap_destroy(future_bitmap);
+	gbitmap_destroy(past_bitmap);
+	 
+	//Destroy BitmapLayers
+	bitmap_layer_destroy(future_layer);
+	bitmap_layer_destroy(past_layer);
 }
 
 int main(void) {
