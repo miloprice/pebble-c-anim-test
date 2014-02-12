@@ -7,12 +7,55 @@ InverterLayer *inv_layer;	//Inverter layer
 GBitmap *future_bitmap, *past_bitmap;
 BitmapLayer *future_layer, *past_layer;
 
+void on_animation_stopped(Animation *anim, bool finished, void *context)
+{   // Added for step 4
+	// Free memory used by Animation
+	property_animation_destroy((PropertyAnimation*) anim);
+}
+
+void animate_layer(Layer *layer, GRect *start, GRect *finish, int duration, int delay)
+{
+	// Declare animation
+	PropertyAnimation *anim = property_animation_create_layer_frame(layer, start, finish);
+	
+	// Set characteristics
+	animation_set_duration((Animation*) anim, duration);
+	animation_set_delay((Animation*) anim, delay);
+	
+	// Set stopped handler to free memory
+	AnimationHandlers handlers = {
+		// The reference to the stopped handler is the only one in the array
+		.stopped = (AnimationStoppedHandler) on_animation_stopped
+	};
+	animation_set_handlers((Animation*) anim, handlers, NULL);
+	
+	// Start animation!
+	animation_schedule((Animation*) anim);
+}
+
 void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 	//Format the buffer string using tick_time as the time source
 	strftime(buffer, sizeof("00:00"), "%H:%M", tick_time);
 	
-	//Change the TextLayer text to show the new time
-	text_layer_set_text(text_layer, buffer);
+	int seconds = tick_time->tm_sec;
+	
+	if (seconds == 59){
+		// Slide offscreen to the right
+		GRect start = GRect(0,53,144,168);
+		GRect finish = GRect(144,53,144,168);
+		animate_layer(text_layer_get_layer(text_layer), &start, &finish, 300, 500);
+	} else if (seconds == 0) {
+		// Change the TextLayer text to show the new time!
+		text_layer_set_text(text_layer, buffer);
+		
+		// Slide onscreen from the left
+		GRect start = GRect(-144,53,144,168);
+		GRect finish = GRect(0,53,144,168);
+		animate_layer(text_layer_get_layer(text_layer), &start, &finish, 300, 500);
+	} else {	
+		//Change the TextLayer text to show the new time
+		text_layer_set_text(text_layer, buffer);
+	}
 }
 
 void window_load(Window *window)
@@ -78,7 +121,7 @@ void handle_init(void) {
 	
 	window_stack_push(window, true);
 	
-	tick_timer_service_subscribe(MINUTE_UNIT, (TickHandler) tick_handler);
+	tick_timer_service_subscribe(SECOND_UNIT, (TickHandler) tick_handler);
 }
 
 void handle_deinit(void) {
