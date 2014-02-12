@@ -1,11 +1,15 @@
 #include <pebble.h>
 
 Window *window;
-TextLayer *text_layer;
 char buffer[] = "00:00";
 InverterLayer *inv_layer;	//Inverter layer
 GBitmap *future_bitmap, *past_bitmap;
 BitmapLayer *future_layer, *past_layer;
+TextLayer *text_layer, *square_layer;	// added for step 4 (animations)
+AppTimer *timer;						// step 4
+const int square_size = 10;				// step 4
+const int delta = 40;					// step 4
+int dx = 1;								// step 4
 
 void on_animation_stopped(Animation *anim, bool finished, void *context)
 {   // Added for step 4
@@ -58,11 +62,34 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 	}
 }
 
+void timer_callback(void *data) {   // Step 4
+    //Get current position
+    GRect current = layer_get_frame(text_layer_get_layer(square_layer));
+     
+    //Check to see if we have hit the edges
+    if(current.origin.x > 144 - square_size)
+    {
+        dx = -1;    //Reverse
+    }
+    else if(current.origin.x < 0)
+    {
+        dx = 1; //Forwards
+    }
+ 
+    //Move the square to the next position, modifying the x value
+    GRect next = GRect(current.origin.x + dx, current.origin.y, square_size, square_size);
+    layer_set_frame(text_layer_get_layer(square_layer), next);
+     
+    //Register next execution
+    timer = app_timer_register(delta, (AppTimerCallback) timer_callback, NULL);
+}
+
 void window_load(Window *window)
 {
 	//Load font
 	ResHandle font_handle = resource_get_handle(RESOURCE_ID_IMAGINE_42);
-	
+
+	//Time layer
 	text_layer = text_layer_create(GRect(0, 53, 144, 168));
 	text_layer_set_background_color(text_layer, GColorClear);
 	text_layer_set_text_color(text_layer, GColorBlack);
@@ -72,20 +99,14 @@ void window_load(Window *window)
 	layer_add_child(window_get_root_layer(window), (Layer*) text_layer);
 	
 	//Arbitrary text:
-	text_layer_set_text(text_layer, "Radscorpion sighted");	
+	//text_layer_set_text(text_layer, "Radscorpion sighted");	
+	
 	
 	//Inverter layer
 	inv_layer = inverter_layer_create(GRect(0,50,144,62));
 	layer_add_child(window_get_root_layer(window), (Layer*) inv_layer);
 	
-	//Get time structure so face doesn't start blank
-	struct tm *t;
-	time_t temp;
-	temp = time(NULL);
-	t = localtime(&temp);
 	
-	//Manually call tick handler when window is loading
-	tick_handler(t, MINUTE_UNIT);
 	
 	//Load bitmaps into GBitmap structures
 	//The ID you chose when uploading is prefixed with 'RESOURCE_ID_'
@@ -101,6 +122,23 @@ void window_load(Window *window)
 	past_layer = bitmap_layer_create(GRect(0, 112, 144, 50));
 	bitmap_layer_set_bitmap(past_layer, past_bitmap);
 	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(past_layer));
+
+	//Create the square layer (step 4)
+	square_layer = text_layer_create(GRect(0, 55, square_size, square_size));
+	text_layer_set_background_color(square_layer, GColorWhite);
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(square_layer));
+	
+	//Get time structure so face doesn't start blank
+	struct tm *t;
+	time_t temp;
+	temp = time(NULL);
+	t = localtime(&temp);
+	
+	//Manually call tick handler when window is loading
+	tick_handler(t, MINUTE_UNIT);
+	
+	//Start the square moving (step 4)
+	timer = app_timer_register(delta, (AppTimerCallback) timer_callback, NULL);
 }
 
 void window_unload(Window *window)
@@ -108,6 +146,13 @@ void window_unload(Window *window)
 	text_layer_destroy(text_layer);
 	
 	inverter_layer_destroy(inv_layer);
+	
+	// Step 4:
+	//Cancel timer
+	app_timer_cancel(timer);
+		 
+	//Destroy square layer
+	text_layer_destroy(square_layer);
 }
 
 
